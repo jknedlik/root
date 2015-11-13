@@ -126,7 +126,8 @@ class TDataSetManagerAliEn : public TDataSetManager {
       virtual void Init(TString cacheDir, TString urlTpl,
          ULong_t cacheExpire_s);
 
-      virtual TList *GetFindCommandsFromUri(TString &uri, EDataMode &dataMode, Bool_t &forceUpdate);
+      virtual Bool_t GetFindCommandsFromUri(TList *findCommands, TString &uri,
+         EDataMode &dataMode, Bool_t &forceUpdate);
 
    public:
 

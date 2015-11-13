@@ -418,14 +418,16 @@ TDataSetManagerAliEn::~TDataSetManagerAliEn()
 }
 
 //______________________________________________________________________________
-TList *TDataSetManagerAliEn::GetFindCommandsFromUri(TString &uri,
-  EDataMode &dataMode, Bool_t &forceUpdate)
+Bool_t TDataSetManagerAliEn::GetFindCommandsFromUri(TList *findCommands,
+  TString &uri, EDataMode &dataMode, Bool_t &forceUpdate)
 {
+  UInt_t countValid = 0;
+
   // Parse kind
   TPMERegexp reKind("^(Data;|Sim;|Find;)");
   if (reKind.Match(uri) != 2) {
     Error("GetFindCommandsFromUri", "Data, Sim or Find not specified");
-    return NULL;
+    return kFALSE;
   }
 
   // Parse data mode (remote, local, cache -- optional)
@@ -443,11 +445,9 @@ TList *TDataSetManagerAliEn::GetFindCommandsFromUri(TString &uri,
     else {
       Error("GetFindCommandsFromUri",
         "Wrong analysis mode specified: use one of: Mode=remote, local, cache");
-      return NULL;  // no mode is ok, but wrong mode is not
+      return kFALSE;  // no mode is ok, but wrong mode is not
     }
   }
-
-  TList *findCommands = NULL;
 
   if (reKind[1].BeginsWith("Find")) {
 
@@ -459,16 +459,13 @@ TList *TDataSetManagerAliEn::GetFindCommandsFromUri(TString &uri,
     TString regexp;
 
     // Custom search URI
-    if (!ParseCustomFindUri(uri, basePath, fileName, anchor, query, treeName,
-      regexp)) {
+    if (!ParseCustomFindUri(uri, basePath, fileName, anchor, query, treeName, regexp)) {
       Error("GetFindCommandsFromUri", "Malformed AliEn find command");
-      return NULL;
+      return kFALSE;
     }
 
-    findCommands = new TList();
-    findCommands->SetOwner();
-    findCommands->Add( new TAliEnFind(basePath, fileName, anchor, kFALSE,
-      treeName, regexp, query) );
+    findCommands->Add(new TAliEnFind(basePath, fileName, anchor, kFALSE, treeName, regexp, query));
+    countValid++;
 
   }
   else {  // Data or Sim
@@ -483,20 +480,16 @@ TList *TDataSetManagerAliEn::GetFindCommandsFromUri(TString &uri,
     if (!ParseOfficialDataUri(uri, sim, lhcPeriod, year, runList, esd,
       aodNum, pass)) {
       Error("GetFindCommandsFromUri", "Invalid parameters");
-      return NULL;
+      return kFALSE;
     }
-
-    findCommands = new TList();
-    findCommands->SetOwner(kTRUE);
 
     TString basePathRun;
 
     if (!gGrid) {
       TGrid::Connect("alien:");
       if (!gGrid) {
-        delete findCommands;
         delete runList;
-        return NULL;
+        return kFALSE;
       }
     }
 
@@ -524,7 +517,7 @@ TList *TDataSetManagerAliEn::GetFindCommandsFromUri(TString &uri,
     std::vector<Int_t> validRuns;
     {
       TGridResult *validRunDirs = gGrid->Ls( basePathRun.Data() );
-      if (!validRunDirs) return NULL;
+      if (!validRunDirs) return kFALSE;
 
       TIter nrd(validRunDirs);
       TMap *dir;
@@ -598,8 +591,8 @@ TList *TDataSetManagerAliEn::GetFindCommandsFromUri(TString &uri,
         treeName = "/aodTree";
       }
 
-      findCommands->Add( new TAliEnFind(basePath, fileName, "", kTRUE,
-        treeName) );
+      findCommands->Add(new TAliEnFind(basePath, fileName, "", kTRUE, treeName));
+      countValid++;
 
     }
 
@@ -611,8 +604,7 @@ TList *TDataSetManagerAliEn::GetFindCommandsFromUri(TString &uri,
   TPMERegexp reForceUpdate("(^|;)ForceUpdate(;|$)");
   forceUpdate = (reForceUpdate.Match(uri) == 3);
 
-  // If no valid data was found, then findCommands is NULL
-  return findCommands;
+  return (countValid > 0);
 }
 
 //______________________________________________________________________________
@@ -963,7 +955,34 @@ TFileCollection *TDataSetManagerAliEn::GetDataSet(const char *uri, const char *)
   TString sUri(uri);
   EDataMode dataMode;
   Bool_t forceUpdate;
-  TList *findCmds = GetFindCommandsFromUri(sUri, dataMode, forceUpdate);
+
+  // Separate multiple datasets via |, \n, \r
+  TList *findCmds = new TList();
+  findCmds->SetOwner();
+  {
+    TString tok;
+    Ssiz_t from = 0;
+    TPMERegexp rComm("^\\s*#");
+    while ((sUri.Tokenize(tok, from, "[\\|\\r\\n]"))) {
+      tok = tok.Strip(TString::kBoth);
+      if (tok.IsNull()) continue;
+      if (rComm.Match(tok.Data())) {
+        if (gDebug >=1 ) Info("GetDataSet", "Ignoring comment: %s", tok.Data());
+        continue;
+      }
+      if (gDebug >= 1) Info("GetDataSet", "Search string: %s", tok.Data());
+      if (!GetFindCommandsFromUri(findCmds, tok, dataMode, forceUpdate)) {
+        delete findCmds;
+        findCmds = NULL;
+        return NULL;
+      }
+    }
+  }
+
+  if (findCmds->GetEntries() == 0) {
+    delete findCmds;
+    findCmds = NULL;
+  }
   if (!findCmds) return NULL;
 
   fc = new TFileCollection();  // this fc will contain all data
