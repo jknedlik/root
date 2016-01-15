@@ -588,6 +588,14 @@ check_library() {
     libdirl=$1   ; shift
     libdirs="$*"
 
+    # ALICE fix for Ubuntu builds on x86_64
+    for x in $libdirs ; do
+        if test "$x" = "/usr/lib" ; then
+            libdirs="$libdirs /usr/lib/x86_64-linux-gnu"
+            break
+        fi
+    done
+
     if test ! "x$iossdk" = "x" ; then
         sdklibs=""
         for i in $libdirs; do
