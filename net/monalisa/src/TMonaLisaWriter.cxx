@@ -44,6 +44,7 @@
 // - Added support also for performance monitoring when writing         //
 //////////////////////////////////////////////////////////////////////////
 
+#include <pthread.h>
 #include "TMonaLisaWriter.h"
 #include "TSystem.h"
 #include "TGrid.h"
