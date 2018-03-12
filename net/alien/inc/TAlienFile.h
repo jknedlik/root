@@ -35,7 +35,6 @@
 #include "TXNetFile.h"
 #endif
 
-
 class TUrl;
 
 class TAlienFile : public TXNetFile {
@@ -56,7 +55,7 @@ public:
    TAlienFile(const char *purl, Option_t *option = "",
               const char *ftitle = "", Int_t compress = 1,
               Bool_t parallelopen = kFALSE, const char *lurl = 0,
-              const char *authz = 0);
+              const char *authz = 0, const char *se = "");
    virtual ~TAlienFile();
 
    virtual void Close(const Option_t *opt = "");
