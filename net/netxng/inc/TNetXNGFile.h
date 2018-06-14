@@ -52,13 +52,14 @@ private:
    Int_t                   fReadvIovMax; // Max number of readv chunks
    Int_t                   fQueryReadVParams;
    TString                 fNewUrl;
+   const char *lurl;
 
 public:
    TNetXNGFile() : TFile(),
       fFile(0), fUrl(0), fMode(XrdCl::OpenFlags::None), fInitCondVar(0),
       fReadvIorMax(0), fReadvIovMax(0) {}
    TNetXNGFile(const char *url, Option_t *mode = "", const char *title = "",
-               Int_t compress = 1, Int_t netopt = 0, Bool_t parallelopen = kFALSE);
+               Int_t compress = 1, Int_t netopt = 0, Bool_t parallelopen = kFALSE, const char *lurl = 0);
    virtual ~TNetXNGFile();
 
    virtual void     Init(Bool_t create);
