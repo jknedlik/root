@@ -32,12 +32,13 @@
 //////////////////////////////////////////////////////////////////////////
 
 #ifndef ROOT_TXNetFile
+#include "TNetXNGFile.h"
 #include "TXNetFile.h"
 #endif
 
 class TUrl;
 
-class TAlienFile : public TXNetFile {
+class TAlienFile : public TNetXNGFile {
 
 private:
    TString fLfn;       // logical file name
@@ -51,7 +52,7 @@ private:
    Long64_t fOpenedAt; // Absolute value for time when opened
    Double_t fElapsed;  // Time elapsed to opem file
 public:
-   TAlienFile() : TXNetFile(), fLfn(), fAuthz(), fGUID(), fUrl(), fPfn(), fSE(), fImage(0), fNreplicas(0), fOpenedAt(0), fElapsed(0) { }
+   TAlienFile() : TNetXNGFile(), fLfn(), fAuthz(), fGUID(), fUrl(), fPfn(), fSE(), fImage(0), fNreplicas(0), fOpenedAt(0), fElapsed(0) { }
    TAlienFile(const char *purl, Option_t *option = "",
               const char *ftitle = "", Int_t compress = 1,
               Bool_t parallelopen = kFALSE, const char *lurl = 0,

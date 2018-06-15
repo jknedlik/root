@@ -83,7 +83,7 @@ TAlienFile::TAlienFile(const char *purl, Option_t *option,
                        const char *ftitle, Int_t compress,
                        Bool_t parallelopen, const char *lurl,
                        const char *authz, const char *se) :
-   TXNetFile(purl, option, ftitle, compress, 0, parallelopen, lurl)
+   TNetXNGFile(purl, option, ftitle, compress, 0, parallelopen, lurl)
 {
    TUrl logicalurl(lurl);
    fLfn = logicalurl.GetFile();
@@ -298,7 +298,7 @@ TAlienFile *TAlienFile::Open(const char *url, Option_t *option,
             "Failed to get a response from the server");
          return 0;
       }
-      
+
       alienResult = dynamic_cast < TAlienResult * >(result);
       list = dynamic_cast < TList * >(alienResult);
       if (!list) {
@@ -392,7 +392,7 @@ TAlienFile *TAlienFile::Open(const char *url, Option_t *option,
                // Reset the temp monitoring info
                if (gMonitoringWriter)
                   gMonitoringWriter->SendFileOpenProgress(0, 0, 0, kFALSE);
-               
+
                // cleanup variables
                delete result;
                delete iter;
@@ -561,7 +561,7 @@ void TAlienFile::Close(Option_t * option)
 
 
    // Close file
-   TXNetFile::Close(option);
+   TNetXNGFile::Close(option);
 
    if (fOption == "READ")
       return;
@@ -615,7 +615,7 @@ void TAlienFile::Close(Option_t * option)
    delete iter;
 
    gSystem->Unsetenv("GCLIENT_EXTRA_ARG");
-   
+
    command = "mirror -x " + fSE + " " + fLfn;
    result = gGrid->Command(command, kFALSE, TAlien::kOUTPUT);
    delete result;
